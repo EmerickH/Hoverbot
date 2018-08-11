@@ -2,6 +2,10 @@ Vue.component('battery-tile', {
   props: {
     title: String,
     status: Object,
+    send: {
+      type: Function,
+      required: true,
+    },
   },
   data() {
     return {
@@ -14,8 +18,8 @@ Vue.component('battery-tile', {
   },
   watch: {
     status() {
-      if (this.status.charging) this.charging = this.status.charging.code;
-      if (this.status.battery) this.curV = this.status.battery.voltage;
+      if (this.status.charging) this.charging = this.status.charging.c;
+      if (this.status.battery) this.curV = this.status.battery.v;
       this.curPercent = Math.round(100 * ((this.curV - this.minV) / (this.maxV - this.minV)));
       if (this.curV < this.minV) {
         this.curPercent = 0;
@@ -33,6 +37,10 @@ Vue.component('battery-tile', {
       } else {
         this.$refs.batteryExt.value = 0;
       }
+    },
+    stopraspi(){
+      this.send('shutdownraspi', {});
+      alert("Raspberry shutdown!");
     },
   },
   template: `<div>
@@ -56,6 +64,9 @@ Vue.component('battery-tile', {
           <span v-if="charging" class="icon is-small" style="position:absolute; text-align:center;"><i class="fas fa-bolt"></i></span>
           <div>
             <progress ref="batteryExt" class="progress is-small is-radiusless is-success" value="0" max="100" style="width:5px;"></progress>
+          </div>
+          <div>
+            <button @mouseup="stopraspi()">STOP</button>
           </div>
         </div>
         </div>

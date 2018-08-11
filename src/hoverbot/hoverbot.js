@@ -63,8 +63,8 @@ module.exports = class Hoverbot extends EventEmitter {
     logger.debug('[Hoverbot] Shutting down...');
     logger.debug('[Hoverbot] Stop motors');
     this.motors.stop();
-    logger.debug('[Hoverbot] Clear led strip pixels');
-    this.spi.clearPixels();
+    //logger.debug('[Hoverbot] Clear led strip pixels');
+    //this.spi.clearPixels();
   }
 
   mock() {

@@ -16,12 +16,22 @@
     <!-- Components -->
     <script type="text/javascript" src="components/battery.js"></script>
     <script type="text/javascript" src="components/status.js"></script>
-    <script type="text/javascript" src="components/lightring.js"></script>
+    <!-- <script type="text/javascript" src="components/lightring.js"></script> -->
     <script type="text/javascript" src="components/proximity.js"></script>
-    <script type="text/javascript" src="components/audio.js"></script>
+    <!-- <script type="text/javascript" src="components/audio.js"></script> -->
     <script type="text/javascript" src="components/dpad.js"></script>
-    <script type="text/javascript" src="components/camera.js"></script>
+    <!-- <script type="text/javascript" src="components/camera.js"></script> -->
     <script type="text/javascript" src="components/message.js"></script>
+    <script type="text/javascript" src="components/position.js"></script>
+    
+    <style>
+    .roue{
+        border: solid 1px black;
+        border-radius: 100%;
+        height: 80px;
+        width: 80px;
+    }
+    </style>
   </head>
 
   <body>
@@ -32,7 +42,7 @@
           <span class="navbar-item">{{ this.name }}</span>
         </div>
         <div class="navbar-end">
-          <span class="navbar-item"><battery-tile title="Battery" :status="motorStatus"/></span>
+          <span class="navbar-item"><battery-tile title="Battery" :status="motorStatus" :send="send"/></span>
         </div>
       </nav>
       <div class="tile is-ancestor" style="margin: 10px">
@@ -40,7 +50,7 @@
           <div class="tile">
             <div class="tile is-parent">
               <article class="tile is-child notification">
-                <camera-tile title="webcam" alt="cat video" :src="cameraSrc" :timeout="5"/>
+                <position-tile title="Position" alt="" :status="motorStatus"/>
               </article>
             </div>
             <div class="tile is-parent is-vertical">

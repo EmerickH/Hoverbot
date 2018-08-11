@@ -25,7 +25,18 @@ Vue.component('dpad-tile', {
         ArrowRight: false,
         ArrowUp: false,
         ArrowDown: false,
+        customL: 0,
+        customR: 0,
       },
+      gamepad: {
+        gp: null,
+        searchi: null,
+        interval: Number,
+        max: 50,
+        min: 11,
+        active: false,
+      },
+      shutd: false,
     };
   },
   computed: {
@@ -34,6 +45,7 @@ Vue.component('dpad-tile', {
       if (this.driveMessage.ArrowLeft) return true;
       if (this.driveMessage.ArrowRight) return true;
       if (this.driveMessage.ArrowDown) return true;
+      if ((this.driveMessage.customL>0 || this.driveMessage.customR>0) && this.driveMessage.speed>0) return true;
       return false;
     },
   },
@@ -63,6 +75,7 @@ Vue.component('dpad-tile', {
     this.addTouchListeners(this.$refs.left, 'ArrowLeft');
     this.addTouchListeners(this.$refs.right, 'ArrowRight');
     this.addTouchListeners(this.$refs.down, 'ArrowDown');
+    this.gamepad.searchi = setInterval(this.pollGamepads, this.gamepad.interval);
   },
   methods: {
     addTouchListeners(element, value) {
@@ -87,7 +100,12 @@ Vue.component('dpad-tile', {
       this.send('dpad', this.driveMessage);
       this.driveHearbeat = setInterval(() => {
         this.send('dpad', this.driveMessage);
+        console.log(this.driveMessage.customL + ";" + this.driveMessage.customR + ";" + this.driveMessage.speed);
       }, this.heartbeat);
+    },
+    stopdrive() {
+      clearInterval(this.driveHearbeat);
+      this.send('stop', {});
     },
     onDpad(key) {
       if (!(key in this.driveMessage)) return;
@@ -106,9 +124,93 @@ Vue.component('dpad-tile', {
       this.driveMessage[key] = false;
       // If the dpad went from active to inactive, stop heartbeat loop and send stop message
       if (!this.isActive && wasActive) {
-        clearInterval(this.driveHearbeat);
-        this.send('stop', {});
+        this.stopdrive();
       }
+    },
+    pollGamepads() {
+      var gamepads = navigator.getGamepads ? navigator.getGamepads() : (navigator.webkitGetGamepads ? navigator.webkitGetGamepads : []);
+      for (var i = 0; i < gamepads.length; i++) {
+        var gp = gamepads[i];
+        if (gp) {
+          console.log("Gamepad connected at index " + gp.index + ": " + gp.id +
+            ". It has " + gp.buttons.length + " buttons and " + gp.axes.length + " axes.");
+          clearInterval(this.gamepad.searchi);
+          this.gamepad.gp = gp;
+          //this.drive();
+          this.gameLoop();
+        }
+      }
+    },
+    gameLoop() {
+      var gp = this.gamepad.gp;
+      //console.log(gp)
+      var maxi = Math.max(Math.abs(gp.axes[0]), Math.abs(gp.axes[1]));
+      var mini = this.gamepad.min / this.gamepad.max;
+        
+      if (this.buttonPressed(gp.buttons[7]) && maxi>mini) {
+        this.driveMessage.speed = Math.round(gp.axes[1] * gp.axes[1] * this.gamepad.max);
+        
+        if (this.driveMessage.speed < this.gamepad.min && Math.abs(gp.axes[0]) > mini){
+          this.driveMessage.speed = Math.round(gp.axes[0] * gp.axes[0] * 30);
+          this.driveMessage.customL = (gp.axes[0] > mini) ? -1 : 1;
+          this.driveMessage.customR = (gp.axes[0] < -mini) ? -1 : 1;
+        }else{
+          var axev = 1-gp.axes[2]*gp.axes[2];
+          this.driveMessage.customL = (gp.axes[2] > mini) ? axev : 1;
+          this.driveMessage.customR = (gp.axes[2] < -mini) ? axev : 1;
+          
+          if(gp.axes[1] > 0){
+            this.driveMessage.customL = -this.driveMessage.customL;
+            this.driveMessage.customR = -this.driveMessage.customR;
+          }
+        }
+        
+
+        if (!this.gamepad.active){
+          this.drive();
+          this.gamepad.active = true;
+        }
+      }else{
+        this.driveMessage.speed = 0;
+        this.stopdrive();
+        this.gamepad.active = false;
+      }
+        
+      if (this.gamepad.Arrow != this.gamepad.oldArrow){
+          this.onDpad(this.gamepad.Arrow);
+          if (this.gamepad.oldArrow != "no"){
+              this.onRelease(this.gamepad.oldArrow);
+          }
+          this.gamepad.oldArrow = this.gamepad.Arrow;
+      }
+        
+      if (this.buttonPressed(gp.buttons[1])) {
+          if (this.shutd == false){
+              this.shutd = true;
+              console.log("Shutdown...");
+              this.send('shutdown', {});
+              setTimeout(this.endShutdown, 1000);
+          }
+      }else if(this.buttonPressed(gp.buttons[0])){
+          if (this.shutd == false){
+              this.shutd = true;
+              console.log("Starting...");
+              this.send('start', {});
+              setTimeout(this.endShutdown, 1000);
+          }
+      }
+        
+      requestAnimationFrame(this.gameLoop);
+    },
+    endShutdown(){
+       this.shutd = false;
+       console.log("End shutdown..."); 
+    },
+    buttonPressed(b) {
+      if (typeof(b) == "object") {
+        return b.pressed;
+      }
+      return b == 1.0;
     },
   },
   template: `<div>
@@ -148,6 +250,8 @@ Vue.component('dpad-tile', {
         <div class="level"><div class="level-item"><h1 class="subtitle is-1">{{ driveMessage.speed }}</h1></div></div>
         <div class="level"><div class="level-item"><input type="range" class="slider" v-model="driveMessage.speed" :min="settings.speedMin" :max="settings.speedMax" :step="settings.speedStep"></div></div>
         <div class="level"><div class="level-item"><h6 class="subtitle is-6">drive speed</h6></div></div>
+        <div class="level"><div class="level-item"><input type="range" class="slider" v-model="gamepad.max" :min="settings.speedMin" :max="settings.speedMax" :step="settings.speedStep"></div></div>
+        <div class="level"><div class="level-item"><h6 class="subtitle is-6">max gamepad value {{ driveMessage.customL }};{{ driveMessage.customR }}</h6></div></div>
       </div>
     </div>
     </div>`,
