@@ -79,6 +79,20 @@ hoverbot.on('shutdownraspi', () => {
     logger.info('Shutdown raspi...');
 });
 
+hoverbot.on('startsave', () => {
+    hoverbot.motors.saving = 1;
+    logger.info('Start saving...');
+});
+
+hoverbot.on('stopsave', () => {
+    hoverbot.motors.saving = 0;
+    logger.info('Stop saving...');
+});
+
+hoverbot.on('playsave', () => {
+    hoverbot.motors.playsave();
+});
+
 // Handle the tts event from the UI
 hoverbot.on('tts', (data) => {
   if (data.tts) hoverbot.audio.tts(data.tts);

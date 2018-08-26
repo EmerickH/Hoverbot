@@ -6,13 +6,13 @@
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <link rel="shortcut icon" href="assets/favicon.png">
     <!-- Bulma CSS: https://bulma.io/documentation/ -->
-    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.1/css/bulma.min.css" />
+    <link rel="stylesheet" type="text/css" href="scripts/bulma.min.css" />
     <!-- Bulma CSS (switch): https://wikiki.github.io/form/switch/ -->
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/bulma-switch@1.0.1/dist/bulma-switch.min.css" />
+    <link rel="stylesheet" type="text/css" href="scripts/bulma-switch.min.css" />
     <!-- Font Awesome 5 https://fontawesome.com/ -->
-    <script defer src="https://use.fontawesome.com/releases/v5.0.7/js/all.js"></script>
+    <script defer src="scripts/fa.js"></script>
     <!-- Vuejshttps://vuejs.org/ -->
-    <script src="https://cdn.jsdelivr.net/npm/vue@2.5.16/dist/vue.min.js"></script>
+    <script src="scripts/vue.min.js"></script>
     <!-- Components -->
     <script type="text/javascript" src="components/battery.js"></script>
     <script type="text/javascript" src="components/status.js"></script>
@@ -50,7 +50,7 @@
           <div class="tile">
             <div class="tile is-parent">
               <article class="tile is-child notification">
-                <position-tile title="Position" alt="" :status="motorStatus"/>
+                <position-tile title="Position" alt="" :status="motorStatus" :send="send"/>
               </article>
             </div>
             <div class="tile is-parent is-vertical">

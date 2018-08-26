@@ -2,6 +2,10 @@ Vue.component('position-tile', {
   props: {
     title: String,
     status: Object,
+    send: {
+      type: Function,
+      required: true,
+    },
   },
   data() {
     return {
@@ -45,6 +49,15 @@ Vue.component('position-tile', {
       
       this.$refs['r' + name].style = 'transform: rotate(' + (this['r' + name] * 4) + 'deg)';
       this['old' + name] = newv;
+    },
+    startsave(){
+      this.send('startsave', {});
+    },
+    stopsave(){
+      this.send('stopsave', {});
+    },
+    playsave(){
+      this.send('playsave', {});
     }
   },
   template: `<div>
@@ -60,5 +73,8 @@ Vue.component('position-tile', {
                 <div class="level-item roue" ref="rr">{{ this.oldr }}</div>
             </div>
         </div>
+        <button @mouseup="startsave()">Start save</button>
+        <button @mouseup="stopsave()">Stop save</button>
+        <button @mouseup="playsave()">Play save</button>
     </div>`,
 });

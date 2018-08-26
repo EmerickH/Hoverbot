@@ -1,12 +1,16 @@
 const EventEmitter = require('events').EventEmitter;
 const SerialPort = require('serialport');
 const logger = require('winston');
+const fs = require('fs');
 
 module.exports = class Motors extends EventEmitter {
   constructor(config) {
     super();
     this.name = 'Motors';
     this.MAX_SPEED = 240; // Maximum allowed hoverboard motor speed (RPMs)
+    
+    this.saving = 0;
+    //this.poss = array();
 
     // Use optional config parameters if provided, otherwise use defaults
     const port = config.port || '/dev/ttyS0';
@@ -54,7 +58,7 @@ module.exports = class Motors extends EventEmitter {
         if (status.length === 4) this.updateStatus(status[0], status[1], true, status[2], status[3]);
       } catch (err) {
         logger.error(`[${this.name}] ${err.message}`);
-        this.emit('error', { message: 'Error parsing status message' });
+        //this.emit('error', { message: 'Error parsing status message' });
       }
     });
   }
@@ -78,6 +82,64 @@ module.exports = class Motors extends EventEmitter {
     }
     // Emit the updated status
     this.emit('status', this.status);
+    
+    if (this.saving === 1){
+      this.startsave();
+      this.saving = 2;
+    }
+    if (this.saving === 2){
+      this.save(posl, posr);
+    }
+  }
+  
+  startsave(){
+    fs.writeFile('out.txt', "", function(err){
+        if(err){logger.error(err);}
+    });
+  }
+  
+  save(l, r){
+    fs.appendFile('out.txt', "/" + l + ";" + r, function(err){
+        if(err){logger.error(err)}
+    });
+  }
+  
+  playsave(){
+    var poss;
+    fs.readFile('out.txt', 'utf8', function (err,data) {
+      poss = data.toString().split("/");
+      
+    });
+    
+    var rindex = 0;
+    
+    var savehand = setInterval(() => {
+        if (rindex === poss.length){
+          clearInterval(savehand);
+          return;
+        }
+        var pos = poss[rindex].split(";");
+      
+        var spl = 0;
+        var spr = 0;
+        
+        var difl = this.status.position.l - pos[0];
+        if (difl > 0){
+          spl = Math.min(-11, Math.max(-50, difl));
+        }else if(difl < 0){
+          spl = Math.max(11, Math.min(50, Math.abs(difl)));
+        }
+      
+        var difr = this.status.position.r - pos[1];
+        if (this.status.position.r > pos[1]){
+          spr = Math.max(11, Math.min(50, Math.abs(difr)));
+        }else if(this.status.position.r < pos[1]){
+          spr = Math.min(-11, Math.max(-50, difr));
+        }
+        this.move(spl, spr)
+        logger.error("L:"+spl+";R:"+spr);
+        rindex++;
+      }, 100);
   }
 
   stop() {

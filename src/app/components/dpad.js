@@ -129,17 +129,23 @@ Vue.component('dpad-tile', {
     },
     pollGamepads() {
       var gamepads = navigator.getGamepads ? navigator.getGamepads() : (navigator.webkitGetGamepads ? navigator.webkitGetGamepads : []);
+      //var conn = false;
       for (var i = 0; i < gamepads.length; i++) {
         var gp = gamepads[i];
         if (gp) {
           console.log("Gamepad connected at index " + gp.index + ": " + gp.id +
             ". It has " + gp.buttons.length + " buttons and " + gp.axes.length + " axes.");
+          if (gp.axes.length > 3){
           clearInterval(this.gamepad.searchi);
           this.gamepad.gp = gp;
           //this.drive();
           this.gameLoop();
+          clearInterval(this.gamepad.searchi);
+          return;
+          }
         }
       }
+      clearInterval(this.gamepad.searchi);
     },
     gameLoop() {
       var gp = this.gamepad.gp;
