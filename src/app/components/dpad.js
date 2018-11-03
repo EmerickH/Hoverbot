@@ -145,7 +145,7 @@ Vue.component('dpad-tile', {
           }
         }
       }
-      clearInterval(this.gamepad.searchi);
+      //clearInterval(this.gamepad.searchi);
     },
     gameLoop() {
       var gp = this.gamepad.gp;

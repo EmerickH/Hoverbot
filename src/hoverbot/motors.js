@@ -73,6 +73,16 @@ module.exports = class Motors extends EventEmitter {
         item.m = this.statusmessages[item.sB].failure;
       }
     });
+    
+    
+    if (this.saving === 1){
+      this.startsave();
+      this.saving = 2;
+    }
+    if (this.saving === 2){
+      this.save(posl, posr, this.status.position.l, this.status.position.r);
+    }
+    
     // Provided the battery status item still exists, update its voltage value
     if (this.status.battery) this.status.battery.v = voltage;
     if (pos){
@@ -82,14 +92,6 @@ module.exports = class Motors extends EventEmitter {
     }
     // Emit the updated status
     this.emit('status', this.status);
-    
-    if (this.saving === 1){
-      this.startsave();
-      this.saving = 2;
-    }
-    if (this.saving === 2){
-      this.save(posl, posr);
-    }
   }
   
   startsave(){
@@ -98,13 +100,16 @@ module.exports = class Motors extends EventEmitter {
     });
   }
   
-  save(l, r){
-    fs.appendFile('out.txt', "/" + l + ";" + r, function(err){
+  save(l, r, oldl, oldr){
+    var vitl = l - oldl;
+    var vitr = r - oldr;
+    fs.appendFile('out.txt', "/" + vitl + ";" + vitr, function(err){
         if(err){logger.error(err)}
     });
   }
   
   playsave(){
+    logger.error("Playing save...");
     var poss;
     fs.readFile('out.txt', 'utf8', function (err,data) {
       poss = data.toString().split("/");
@@ -120,10 +125,10 @@ module.exports = class Motors extends EventEmitter {
         }
         var pos = poss[rindex].split(";");
       
-        var spl = 0;
-        var spr = 0;
+        var spl = pos[0];
+        var spr = pos[1];
         
-        var difl = this.status.position.l - pos[0];
+        /*var difl = this.status.position.l - pos[0];
         if (difl > 0){
           spl = Math.min(-11, Math.max(-50, difl));
         }else if(difl < 0){
@@ -135,7 +140,7 @@ module.exports = class Motors extends EventEmitter {
           spr = Math.max(11, Math.min(50, Math.abs(difr)));
         }else if(this.status.position.r < pos[1]){
           spr = Math.min(-11, Math.max(-50, difr));
-        }
+        }*/
         this.move(spl, spr)
         logger.error("L:"+spl+";R:"+spr);
         rindex++;
