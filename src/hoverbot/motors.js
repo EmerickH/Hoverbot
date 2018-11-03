@@ -7,14 +7,14 @@ module.exports = class Motors extends EventEmitter {
   constructor(config) {
     super();
     this.name = 'Motors';
-    this.MAX_SPEED = 240; // Maximum allowed hoverboard motor speed (RPMs)
+    this.MAX_SPEED = 2000; // Maximum allowed hoverboard motor speed (RPMs)
     
-    this.saving = 0;
+    //this.saving = 0;
     //this.poss = array();
 
     // Use optional config parameters if provided, otherwise use defaults
     const port = config.port || '/dev/ttyS0';
-    const baudRate = config.baudRate || 9600;
+    const baudRate = config.baudRate || 19200;
 
     // Init serial port for motor control
     this.motorPort = new SerialPort(port, { baudRate });
@@ -58,7 +58,7 @@ module.exports = class Motors extends EventEmitter {
         if (status.length === 4) this.updateStatus(status[0], status[1], true, status[2], status[3]);
       } catch (err) {
         logger.error(`[${this.name}] ${err.message}`);
-        //this.emit('error', { message: 'Error parsing status message' });
+        this.emit('error', { message: 'Error parsing status message' });
       }
     });
   }
@@ -75,13 +75,13 @@ module.exports = class Motors extends EventEmitter {
     });
     
     
-    if (this.saving === 1){
+    /*if (this.saving === 1){
       this.startsave();
       this.saving = 2;
     }
     if (this.saving === 2){
       this.save(posl, posr, this.status.position.l, this.status.position.r);
-    }
+    }*/
     
     // Provided the battery status item still exists, update its voltage value
     if (this.status.battery) this.status.battery.v = voltage;
@@ -94,7 +94,7 @@ module.exports = class Motors extends EventEmitter {
     this.emit('status', this.status);
   }
   
-  startsave(){
+  /*startsave(){
     fs.writeFile('out.txt', "", function(err){
         if(err){logger.error(err);}
     });
@@ -128,40 +128,45 @@ module.exports = class Motors extends EventEmitter {
         var spl = pos[0];
         var spr = pos[1];
         
-        /*var difl = this.status.position.l - pos[0];
-        if (difl > 0){
-          spl = Math.min(-11, Math.max(-50, difl));
-        }else if(difl < 0){
-          spl = Math.max(11, Math.min(50, Math.abs(difl)));
-        }
-      
-        var difr = this.status.position.r - pos[1];
-        if (this.status.position.r > pos[1]){
-          spr = Math.max(11, Math.min(50, Math.abs(difr)));
-        }else if(this.status.position.r < pos[1]){
-          spr = Math.min(-11, Math.max(-50, difr));
-        }*/
         this.move(spl, spr)
         logger.error("L:"+spl+";R:"+spr);
         rindex++;
       }, 100);
-  }
+  }*/
 
   stop() {
     this.move(0, 0);
+    logger.debug(`Stop command`);
+  }
+  
+  longToByteArray(long) {
+      // we want to represent the input as a 8-bytes array
+      var byteArray = new Buffer([0, 0]);
+
+      for ( var index = 0; index < byteArray.length; index ++ ) {
+          var byte = long & 0xff;
+          byteArray [ index ] = byte;
+          long = (long - byte) / 256 ;
+      }
+
+      return byteArray;
   }
 
-  move(left, right) {
-    let l = Math.round(left);
-    if (left < -this.MAX_SPEED) l = -this.MAX_SPEED;
-    if (left > this.MAX_SPEED) l = this.MAX_SPEED;
-    let r = Math.round(right);
-    if (right < -this.MAX_SPEED) r = -this.MAX_SPEED;
-    if (right > this.MAX_SPEED) r = this.MAX_SPEED;
-    const msg = `\nL${l.toString()},R${r.toString()}\n`;
+  move(speed, turn) {
+    let s = Math.round(speed) + 1000;
+    if (s < 0) s = 0;
+    if (s > this.MAX_SPEED) s = this.MAX_SPEED;
+    let r = Math.round(turn) + 1000;
+    if (r < 0) r = 0;
+    if (r > this.MAX_SPEED) r = this.MAX_SPEED;
+    //const msg = `${s.toString()}${r.toString()}`;
+    let sb = this.longToByteArray(s);
+    let rb = this.longToByteArray(r);
     if (this.motorPort.isOpen) {
-      this.motorPort.write(msg);
-      logger.debug(`[${this.name}] Drive motors ${msg}`);
+      //this.motorPort.write(msg);
+      this.motorPort.write(rb);
+      this.motorPort.write(sb);
+      logger.debug(`[${this.name}] Drive motors ${s};${r}`);
     } else {
       logger.debug(`[${this.name}] Motors port is closed.`);
     }

@@ -6,7 +6,7 @@ const spawn = require('child_process').spawn;
 
 // Initialize the hoverbot
 const hoverbot = new Hoverbot('Ezebot 1', {
-  motors: { baudRate: 9600 }
+  motors: { baudRate: 19200 }
 });
 
 //hoverbot.lightring.animate(animations.start);
@@ -33,9 +33,11 @@ hoverbot.on('stop', () => {
 
 // Parse dpad command and move the hoverbot motors
 hoverbot.on('dpad', (data) => {
-  if ('speed' in data && 'ArrowLeft' in data && 'ArrowRight' in data && 'ArrowUp' in data && 'ArrowDown' in data) {
-    let driveValues = [0, 0];
-    if (data.customL != 0 || data.customR != 0){
+  if ('customL' in data && 'customR' in data) {
+    //let driveValues = [0, 0];
+    //if (data.customL != 0 || data.customR != 0){
+      hoverbot.motors.move(data.customL, data.customR);
+    /*
       driveValues = [data.customL*data.speed, data.customR*data.speed];
     }else if (data.ArrowUp) {
       driveValues = [-data.speed, -data.speed];
@@ -56,7 +58,7 @@ hoverbot.on('dpad', (data) => {
     } else if (data.ArrowLeft) {
       driveValues = [data.speed, -data.speed];
     }
-    hoverbot.motors.move(driveValues[0], driveValues[1]);
+    hoverbot.motors.move(driveValues[0], driveValues[1]);*/
   } else {
     logger.error('Dpad command missing required field(s)');
   }
@@ -79,7 +81,7 @@ hoverbot.on('shutdownraspi', () => {
     logger.info('Shutdown raspi...');
 });
 
-hoverbot.on('startsave', () => {
+/*hoverbot.on('startsave', () => {
     hoverbot.motors.saving = 1;
     logger.info('Start saving...');
 });
@@ -91,7 +93,7 @@ hoverbot.on('stopsave', () => {
 
 hoverbot.on('playsave', () => {
     hoverbot.motors.playsave();
-});
+});*/
 
 // Handle the tts event from the UI
 hoverbot.on('tts', (data) => {
